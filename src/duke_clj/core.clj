@@ -5,55 +5,44 @@
 (def window-height 600)
 
 (def sector {
-    :walls [
-        {:coord [0 0]}
-        {:coord [0 1]}
-        {:coord [1 1]}
-        {:coord [1 0]}]
+             :walls [
+                     {:coord [[100 100] [100 300]]}
+                     {:coord [[100 300] [300 300]]}
+                     {:coord [[300 300] [300 100]]}
+                     {:coord [[300 100] [100 100]]}]
 
-    :holes [
-    ]})
-
-(seq (map :coord (:walls sector)))
+             :holes [
+                     ]})
 
 
-(let [coords (map :coord (:walls sector))]
-  (reduce
-   (fn [w1 w2] (println w1) w2)
-   (last coords)
-   coords))
-
-
-(defn get-frame []
-  (let [frame (new JFrame "Clojure")]
-    (doto frame
+(defn get-buffer []
+  (.getBufferStrategy
+    (doto (new JFrame "Clojure")
       (.setVisible true)
       (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE)
-      (.setSize (java.awt.Dimension. window-width window-height)))
-    frame))
+      (.setSize (java.awt.Dimension. window-width window-height))
+      (.createBufferStrategy 2))))  ; Double buffering
 
 
-(def frame (get-frame))
+(defn draw-sector [sector buffer]
+  (let [graphics (.getDrawGraphics buffer)]
+    ; Clear background
+    (.setColor graphics java.awt.Color/BLACK)
+    (.fillRect graphics 0 0 window-width window-height)
 
-(defn draw-sector [sector frame]
-  (let [buffer (.getBufferStrategy frame)
-        graphics (.getDrawGraphics buffer)]
-    (doto graphics
-      ; Clear background
-      (.setColor java.awt.Color/BLACK)
-      (.fillRect 0 0 window-width window-height)
+    (.setColor graphics java.awt.Color/WHITE)
 
-      (.setColor java.awt.Color/WHITE)
-      (.fillOval 200 200 50 50)
+    (doseq [[[x1 y1] [x2 y2]] (map :coord (:walls sector))]
+      (.drawLine graphics x1 y1 x2 y2))
 
-      ; It is best to dispose() a Graphics object when done with it.
-      (.dispose))
+    (.fillOval graphics 200 200 50 50)
 
-    ; Shows the contents of the backbuffer on the screen.
-    (.show buffer)))
+    ; It is best to dispose() a Graphics object when done with it.
+    (.dispose graphics))
 
+  ; Shows the contents of the backbuffer on the screen.
+  (.show buffer))
 
-(draw-sector sector frame)
 
 (defn -main []
-  (get-frame))
+  (draw-sector sector (get-buffer)))
